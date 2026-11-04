@@ -21,16 +21,7 @@
 @media(max-width:680px){.weekly-reminder,.weekly-status{flex-direction:column;align-items:stretch}.weekly-reminder .btn,.weekly-status .btn{width:100%}}
 .cut-group-heading td{background:#edf4f0!important;color:#176255!important;font-weight:850!important;letter-spacing:.25px;font-size:13px!important;padding:13px 14px!important;border-top:2px solid #dcebe4!important}
 </style>
-  <script>
-// Opcional: para sincronizar dois ou mais aparelhos em tempo real,
-// preencha os campos com os dados públicos do seu projeto Supabase.
-// A chave "anon" / "publishable" é pública; NUNCA cole uma service_role aqui.
-window.BATAN_CLOUD = {
-  url: "",
-  anonKey: ""
-};
-
-</script>
+  <script src="./config.js"></script>
 
 </head>
 <body>
@@ -38,7 +29,7 @@ window.BATAN_CLOUD = {
 <script>
 /* Batan Grill — painel de marmitas. JavaScript puro, sem dependências locais. */
 (()=>{'use strict';
-const TAX=.12, STORAGE='batan_grill_marmitas_v2', CLOUD_STORAGE='batan_cloud_public_v1';
+const TAX=.12, STORAGE='batan_grill_marmitas_v2', CLOUD_STORAGE='batan_cloud_public_v1', PRE_CLOUD_BACKUP_KEY='batan_grill_backup_pre_nuvem_v1';
 const GROUPS={carbo:'Base / carboidrato',protein:'Proteínas',beans:'Feijão',veg:'Legumes'};
 const COLORS={carbo:'#dba44d',protein:'#bf7662',beans:'#88695a',veg:'#57a684'};
 const SIZES=['P','M','G'];
@@ -136,12 +127,13 @@ function mergeBaseCuts(catalog){if(!Array.isArray(catalog))return structuredClon
 const defaultState=()=>({catalog:structuredClone(baseCatalog),catalogSchema:CATALOG_SCHEMA,targets:structuredClone(defTargets),draft:defaultDraft(),reports:[],preferredTab:'planejamento',selectedDate:null});
 const loadStore=()=>{try{const s=JSON.parse(localStorage.getItem(STORAGE));if(s&&Array.isArray(s.catalog)&&s.targets&&s.draft&&Array.isArray(s.reports)){if(s.catalogSchema!==CATALOG_SCHEMA){s.catalog=mergeBaseCuts(s.catalog);s.catalogSchema=CATALOG_SCHEMA;}return s}}catch(e){}return defaultState()};
 let state=loadStore(),tab=state.preferredTab||'planejamento',client=null,session=null,role='viewer',cloudLoading=false,authError='',syncError='',loginPending=false,selectedDate=state.selectedDate||null;
+let cloudSaveTimer=null,cloudSaving=false,cloudSavePending=false;
 let cloudCfg=(()=>{try{const local=JSON.parse(localStorage.getItem(CLOUD_STORAGE)||'null');return local?.url&&local?.anonKey?local:(window.BATAN_CLOUD||{})}catch(e){return window.BATAN_CLOUD||{}}})();
 const isCloud=()=>Boolean(cloudCfg.url?.trim()&&cloudCfg.anonKey?.trim());
 const params=new URLSearchParams(location.search);
 const forceViewer=document.documentElement.dataset.mode==='consulta'||params.get('modo')==='consulta'||params.has('visao');
 let sharedReport=null;
-try{const v=params.get('visao');if(v){const bytes=Uint8Array.from(atob(v.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));sharedReport=JSON.parse(new TextDecoder().decode(bytes));if(!sharedReport?.payload?.draft)sharedReport=null}}catch(e){sharedReport=null}
+try{const v=params.get('visao');if(v&&!isCloud()){const bytes=Uint8Array.from(atob(v.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));sharedReport=JSON.parse(new TextDecoder().decode(bytes));if(!sharedReport?.payload?.draft)sharedReport=null}}catch(e){sharedReport=null}
 let readOnly=()=>forceViewer||Boolean(isCloud()&&role!=='manager');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const n=v=>{if(v===null||v===undefined||String(v).trim()==='')return null;const x=Number(String(v).replace(',','.'));return Number.isFinite(x)?x:null};
@@ -150,7 +142,7 @@ const money=v=>Number.isFinite(v)?v.toLocaleString('pt-BR',{style:'currency',cur
 const fm=(v,d=1)=>Number.isFinite(v)?v.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:d}):'—';
 const pct=v=>Number.isFinite(v)?`${fm(v,1)}%`:'—';
 const datebr=d=>{if(!d)return '—';const [y,m,day]=String(d).split('-');return `${day}/${m}/${y}`};
-const persist=()=>{try{localStorage.setItem(STORAGE,JSON.stringify(state))}catch(e){toast('Armazenamento local cheio. Exporte o backup.','error')}};
+const persist=()=>{try{const safe=isCloud()?{catalog:structuredClone(baseCatalog),targets:structuredClone(defTargets),draft:defaultDraft(),reports:[],catalogSchema:CATALOG_SCHEMA,preferredTab:state.preferredTab,selectedDate:null}:state;localStorage.setItem(STORAGE,JSON.stringify(safe))}catch(e){toast('Armazenamento local cheio. Exporte o backup.','error')}};
 function toast(msg,type='ok'){let e=document.getElementById('toast');if(!e){e=document.createElement('div');e.id='toast';e.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);max-width:min(90vw,540px);padding:12px 18px;border-radius:12px;box-shadow:0 5px 30px #132b2b36;color:white;z-index:99;text-align:center;font-weight:700;font-size:13px';document.body.appendChild(e)}e.style.background=type==='error'?'#a93d39':'#176960';e.textContent=msg;e.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>e.hidden=true,4200)}
 function chooseIngredient(id,catalog=state.catalog){return catalog.find(i=>i.id===id)}
 const PROTEIN_CATEGORIES=['Bovinos · com osso','Bovinos · sem osso','Suínos · com osso','Suínos · sem osso','Aves · com osso','Aves · sem osso','Ovos','Peixes e frutos do mar','Embutidos e preparados','Outras proteínas'];
@@ -167,7 +159,7 @@ function select(bind,html){return `<select data-bind="${esc(bind)}">${html}</sel
 function btn(action,label,cls='secondary',attrs=''){return `<button type="button" class="btn ${cls}" data-action="${esc(action)}" ${attrs}>${label}</button>`}
 function reportOfDate(date){return state.reports.find(r=>r.report_date===date)}
 function getReport(){if(sharedReport)return sharedReport;return reportOfDate(selectedDate)||state.reports[0]||null}
-function statusHtml(){if(sharedReport)return '<span class="pill">🔗 Relatório compartilhado · fotografia do momento</span>';if(isCloud())return `<span class="pill">☁ ${session?'Sincronizado com a nuvem':'Conectando...'}</span>`;return '<span class="pill">◉ Salvo neste aparelho</span>'}
+function statusHtml(){if(sharedReport)return '<span class="pill">🔗 Relatório compartilhado · fotografia do momento</span>';if(isCloud())return `<span class="pill">☁ ${session?(syncError?'Verifique sincronização':'Nuvem conectada'):'Acesso protegido'}</span>`;return '<span class="pill">◉ Salvo neste aparelho</span>'}
 function head(){return `<header class="topbar"><div class="brand"><div class="brandmark">B</div><div><div class="brandname">BATAN GRILL</div><div class="brandsub">Inteligência de marmitas</div></div></div><div class="topright">${statusHtml()}${isCloud()&&session?`<span class="pill">${role==='manager'?'Gestão':'Consulta'}</span><button class="logout" data-action="logout">Sair</button>`:''}</div></header>`}
 function hero(){const viewer=readOnly();return `<div class="hero"><div><div class="eyebrow">12% de imposto · somente custos dos alimentos</div><h1>${viewer?'Painel de resultados':'Controle inteligente de marmitas'}</h1><p>${viewer?'Acompanhe cardápios, montagem, ingredientes, faturamento e margem sem alterar os lançamentos.':'Planeje o cardápio, converta pesos crus em prontos e acompanhe a rentabilidade diária por tamanho e contrato.'}</p></div><div class="hero-side">${!viewer?btn('save','✓ Salvar relatório do dia','secondary'):''}</div></div>`}
 function nav(){const tabs=readOnly()?[['consulta','Relatórios'],['historico','Histórico']]:[['planejamento','Planejamento'],['resultado','Resultado'],['historico','Histórico'],['ingredientes','Ingredientes'],['configuracao','Configuração']];if(!tabs.some(t=>t[0]===tab))tab=tabs[0][0];return `<nav class="nav" aria-label="Navegação">${tabs.map(([k,l])=>`<button class="tab ${tab===k?'active':''}" data-action="tab" data-tab="${k}">${l}</button>`).join('')}</nav>`}
@@ -263,8 +255,8 @@ function weeklyReviewStatus(){
  const info=checked?"Nova conferência: próxima segunda-feira.":"Confira ou atualize os valores por kg cru abaixo; depois confirme a revisão."; 
  return `<section class="weekly-status ${checked?"reviewed":""}" role="status"><div><strong>${text}</strong><p>${info} O registro do lembrete fica salvo somente neste navegador.</p></div>${btn("confirm-price-review",checked?"✓ Conferir novamente":"✓ Marcar conferência como concluída",checked?"secondary":"primary")}</section>`;
 }
-function settingsView(){return `<div class="grid cols-2"><div class="card pad"><div class="card-header"><div><h2>Sincronização entre aparelhos</h2><p>Sem nuvem: este navegador salva sozinho. Com Supabase: gerente e consulta compartilham os dados.</p></div></div><div class="alert ${isCloud()?'info':''}">${isCloud()?`<b>Conexão configurada.</b> ${session?'Usuário autenticado.':'Faça login para consultar ou editar.'}`:'<b>Modo local ativado.</b> Os dados não são compartilhados automaticamente com outros celulares. Um link de relatório congelado pode ser enviado quando o site for publicado.'}</div><div class="field"><label>URL do projeto Supabase</label><input id="cloud-url" type="url" placeholder="https://xxxx.supabase.co" value="${esc(cloudCfg.url||'')}"></div><div class="field" style="margin-top:12px"><label>Chave pública anon / publishable</label><input id="cloud-key" type="text" placeholder="Chave pública (nunca service_role)" value="${esc(cloudCfg.anonKey||'')}"></div><div class="buttonrow" style="margin-top:14px">${btn('save-cloud','Salvar configuração de nuvem','primary')}${btn('remove-cloud','Usar só este aparelho','secondary')}</div><p class="hint">Primeiro execute <span class="mono">supabase.sql</span> e crie os usuários no Supabase. Para disponibilizar a configuração a todos os dispositivos, preencha também <span class="mono">config.js</span> antes de publicar o site.</p></div><div class="card pad"><div class="card-header"><div><h2>Backup e modos de acesso</h2><p>Proteja seus dados e tenha uma tela somente para consulta.</p></div></div><div class="stack"><div><b>Modo gestão</b><p class="hint">Lançamentos e edição: página principal (ou <span class="mono">?modo=gestao</span>).</p></div><div><b>Modo consulta</b><p class="hint">Acesse <span class="mono">consulta.html</span> (ou adicione <span class="mono">?modo=consulta</span> ao endereço). No modo nuvem, um usuário visitante precisa de login de leitura.</p></div><div class="buttonrow">${btn('copy-view-link','Copiar endereço de consulta','secondary')}${btn('backup','Baixar backup JSON','secondary')}</div><div class="field"><label>Restaurar backup (somente modo local)</label><input type="file" id="import-file" accept="application/json,.json"></div><p class="hint">No modo local, os dados da gestão e consulta são compartilhados somente <b>no mesmo navegador</b>. Para dois aparelhos acompanharem ao vivo, ative a nuvem.</p></div></div></div>`}
-function renderLogin(){document.getElementById('app').innerHTML=`${head()}<div class="login-wrap"><div class="login-card"><div class="brandmark">B</div><h1>Entrar no Batan Grill</h1><p>Entre com a conta criada para sua gerente ou com a conta de consulta.</p>${authError?`<div class="alert error">${esc(authError)}</div>`:''}<form id="login-form"><div class="field"><label>E-mail</label><input name="email" required type="email" autocomplete="username" placeholder="email@empresa.com"></div><div class="field"><label>Senha</label><input name="password" required type="password" autocomplete="current-password" placeholder="••••••••"></div><button type="submit" class="btn" ${loginPending?'disabled':''}>${loginPending?'Entrando...':'Entrar'}</button></form><p class="hint" style="margin-top:16px">O acesso de gestão é controlado no banco de dados. Contas de consulta não conseguem editar relatórios.</p><div class="buttonrow" style="margin-top:10px">${btn('remove-cloud','Voltar ao modo local','ghost sm')}</div></div></div>`}
+function settingsView(){return `<div class="grid cols-2"><div class="card pad"><div class="card-header"><div><h2>Sincronização entre aparelhos</h2><p>Sem nuvem: este navegador salva sozinho. Com Supabase: gerente e consulta compartilham os dados.</p></div></div><div class="alert ${isCloud()?'info':''}">${isCloud()?`<b>Conexão configurada.</b> ${session?'Usuário autenticado.':'Faça login para consultar ou editar.'}`:'<b>Modo local ativado.</b> Os dados não são compartilhados automaticamente com outros celulares. Um link de relatório congelado pode ser enviado quando o site for publicado.'}</div><div class="field"><label>URL do projeto Supabase</label><input id="cloud-url" type="url" placeholder="https://xxxx.supabase.co" value="${esc(cloudCfg.url||'')}"></div><div class="field" style="margin-top:12px"><label>Chave pública anon / publishable</label><input id="cloud-key" type="text" placeholder="Chave pública (nunca service_role)" value="${esc(cloudCfg.anonKey||'')}"></div><div class="buttonrow" style="margin-top:14px">${btn('save-cloud','Salvar configuração de nuvem','primary')}${btn('remove-cloud','Usar só este aparelho','secondary')}</div><p class="hint">Primeiro execute <span class="mono">supabase.sql</span> e crie os usuários no Supabase. Para disponibilizar a conexão a todos os dispositivos, preencha o arquivo público <span class="mono">config.js</span> do GitHub com a URL e a chave publishable do projeto (nunca uma chave secreta).</p></div><div class="card pad"><div class="card-header"><div><h2>Backup e modos de acesso</h2><p>Proteja seus dados e tenha uma tela somente para consulta.</p></div></div><div class="stack"><div><b>Modo gestão</b><p class="hint">Lançamentos e edição: página principal (ou <span class="mono">?modo=gestao</span>).</p></div><div><b>Modo consulta</b><p class="hint">Acesse <span class="mono">consulta.html</span> (ou adicione <span class="mono">?modo=consulta</span> ao endereço). No modo nuvem, um usuário visitante precisa de login de leitura.</p></div><div class="buttonrow">${btn('copy-view-link','Copiar endereço de consulta','secondary')}${btn('backup','Baixar backup JSON','secondary')}</div>${isCloud()&&role==='manager'&&pendingLocalReports().length?`<div class="alert info"><b>Relatórios antigos do navegador:</b> ${pendingLocalReports().length} encontrado(s) antes da nuvem. ${btn('import-local-reports','Enviar relatórios locais para a nuvem','secondary')}</div>`:''}<div class="field"><label>Restaurar backup (somente modo local)</label><input type="file" id="import-file" accept="application/json,.json"></div><p class="hint">No modo local, os dados da gestão e consulta são compartilhados somente <b>no mesmo navegador</b>. Para dois aparelhos acompanharem ao vivo, ative a nuvem.</p></div></div></div>`}
+function renderLogin(){document.getElementById('app').innerHTML=`${head()}<div class="login-wrap"><div class="login-card"><div class="brandmark">B</div><h1>Entrar no Batan Grill</h1><p>Entre com a conta criada para sua gerente ou com a conta de consulta.</p>${authError?`<div class="alert error">${esc(authError)}</div>`:''}<form id="login-form"><div class="field"><label>E-mail</label><input name="email" required type="email" autocomplete="username" placeholder="email@empresa.com"></div><div class="field"><label>Senha</label><input name="password" required type="password" autocomplete="current-password" placeholder="••••••••"></div><button type="submit" class="btn" ${loginPending?'disabled':''}>${loginPending?'Entrando...':'Entrar'}</button></form><p class="hint" style="margin-top:16px">O acesso é controlado no banco de dados. Contas de consulta só podem ler relatórios, e nenhuma senha fica no GitHub.</p><div class="buttonrow" style="margin-top:10px">${btn('remove-cloud','Voltar ao modo local','ghost sm')}</div></div></div>`}
 function render(){if(isCloud()&&!session&&!sharedReport){renderLogin();return}if(isCloud()&&session&&cloudLoading){document.getElementById('app').innerHTML=`${head()}<div class="boot"><div class="spinner"></div><p>Carregando relatórios...</p></div>`;return}let content='';if(readOnly()){content=tab==='historico'?historyView():viewer()}else{if(tab==='planejamento')content=planning();else if(tab==='resultado')content=resultView();else if(tab==='historico')content=historyView();else if(tab==='ingredientes')content=ingredientView();else if(tab==='configuracao')content=settingsView()}
  document.getElementById('app').innerHTML=`<div class="shell">${head()}<main class="container">${hero()}${nav()}${weeklyReminder()}${syncError?`<div class="alert error">${esc(syncError)}</div>`:''}${content}${footer()}</main></div>`}
 function updateBind(path,value){const p=path.split('.');const parse=x=>n(x);const d=state.draft;
@@ -274,18 +266,83 @@ function updateBind(path,value){const p=path.split('.');const parse=x=>n(x);cons
  else if(p[0]==='recipe'){const r=d.recipe[Number(p[1])];if(r)r[p[2]]=p[2]==='rawKg'?parse(value):value}
  else if(p[0]==='catalog'){const item=state.catalog[Number(p[1])];if(item)item[p[2]]=parse(value)}
  else if(p[0]==='targets'){state.targets[p[1]][p[2]]=Math.max(0,parse(value)||0)}
- persist();setTimeout(render,0)}
+ persist();queueCloudStateSave();setTimeout(render,0)}
 async function saveReport(){if(readOnly())return;const c=calculate();if(!c.ready){tab='resultado';render();toast('Preencha os custos e corrija as informações pendentes antes de salvar.','error');return}const report={report_date:state.draft.date,payload:{draft:structuredClone(state.draft),catalog:structuredClone(state.catalog),targets:structuredClone(state.targets)}};
  if(isCloud()){if(!session||role!=='manager'){toast('Conta sem permissão de edição.','error');return}const {error}=await client.from('day_reports').upsert({report_date:report.report_date,payload:report.payload,created_by:session.user.id},{onConflict:'report_date'});if(error){toast(`Não foi possível salvar: ${error.message}`,'error');return}await fetchReports();}
  else{state.reports=state.reports.filter(r=>r.report_date!==report.report_date).concat(report).sort((a,b)=>b.report_date.localeCompare(a.report_date));persist()}
- selectedDate=report.report_date;state.selectedDate=selectedDate;persist();toast('Relatório do dia salvo com sucesso.');tab='resultado';render()}
+ selectedDate=report.report_date;state.selectedDate=selectedDate;persist();if(isCloud())await saveCloudState();toast('Relatório do dia salvo com sucesso.');tab='resultado';render()}
 function download(name,mime,content){const blob=new Blob([content],{type:mime});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function exportCsv(){const r=readOnly()?getReport():{report_date:state.draft.date,payload:{draft:state.draft,catalog:state.catalog,targets:state.targets}};if(!r){toast('Não há relatório para exportar.','error');return}const c=calculate(r.payload.draft,r.payload.catalog,r.payload.targets);const rows=[['BATAN GRILL','Relatório de marmitas'],['Data',r.report_date],['Cardápio',r.payload.draft.menu],['Imposto','12%'],['Marmitas',c.qty],['Receita (R$)',round(c.revenue)],['Imposto (R$)',round(c.tax)],['Alimentos (R$)',c.food===null?'':round(c.food)],['Resultado (R$)',c.profit===null?'':round(c.profit)],['Margem (%)',c.margin===null?'':round(c.margin)],[],['Cliente','Tamanho','Quantidade','Venda unitária','Custo alimentos unitário','Resultado unitário','Margem %']];for(const o of c.orders){const p=c.portions[o.size];rows.push([o.customer,o.size,o.count,o.unitPrice,p.foodCost,o.profit===null?'':o.profit/o.count,o.profit===null?'':o.profit/o.revenue*100])}rows.push([],['INGREDIENTE','KG CRU TOTAL','CUSTO TOTAL']);for(const f of c.foods)rows.push([f.name,round(f.rawKg,4),round(f.cost)]);download(`batan-marmitas-${r.report_date}.csv`,'text/csv;charset=utf-8','\ufeff'+rows.map(line=>line.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n'))}
 function shareReport(){const r=readOnly()?getReport():reportOfDate(state.draft.date);if(!r){toast('Salve o relatório antes de compartilhar.','error');return}if(location.protocol==='file:'){toast('Para enviar um link a outro celular, primeiro publique o site. Você já pode imprimir o relatório.','error');return}let u=new URL(location.href);if(isCloud()&&!sharedReport){u=new URL('consulta.html',location.href);copyText(u.href);toast('Link da consulta copiado. O destinatário precisará entrar com a conta de leitura.');return}const bytes=new TextEncoder().encode(JSON.stringify(r));let bin='';bytes.forEach(x=>bin+=String.fromCharCode(x));const encoded=btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');u.search='?visao='+encoded;copyText(u.href);toast('Link do relatório copiado (fotografia do dia, sem atualizações automáticas).')}
 async function copyText(str){try{await navigator.clipboard.writeText(str)}catch(e){const t=document.createElement('textarea');t.value=str;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();document.execCommand('copy');t.remove()}}
 function copyViewLink(){if(location.protocol==='file:'){toast('Publique o site antes de compartilhar a URL com outros aparelhos.','error');return}const u=new URL('consulta.html',location.href);copyText(u.href);toast('Endereço de consulta copiado.')}
-async function startCloud(){if(!isCloud()){session=null;role='viewer';render();return}cloudLoading=true;render();try{if(!window.supabase){await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.onload=resolve;s.onerror=()=>reject(new Error('Biblioteca de nuvem indisponível. Verifique sua internet.'));document.head.appendChild(s)})}client=window.supabase.createClient(cloudCfg.url,cloudCfg.anonKey);const {data,error}=await client.auth.getSession();if(error)throw error;session=data.session;if(session)await afterLogin();else{cloudLoading=false;render()}}catch(e){cloudLoading=false;syncError=`Falha ao conectar à nuvem: ${e.message}`;session=null;render()}}
-async function afterLogin(){cloudLoading=true;render();const {data,error}=await client.from('profiles').select('role').eq('user_id',session.user.id).maybeSingle();if(error){cloudLoading=false;authError=`Não foi possível ler permissões: ${error.message}`;renderLogin();return}role=data?.role||'viewer';await fetchReports();cloudLoading=false;tab=readOnly()?'consulta':'planejamento';render();try{client.removeAllChannels();client.channel('batan-relatorios').on('postgres_changes',{event:'*',schema:'public',table:'day_reports'},()=>fetchReports()).subscribe()}catch(e){}}
+
+function pendingLocalReports(){try{const x=JSON.parse(localStorage.getItem(PRE_CLOUD_BACKUP_KEY)||"null");return Array.isArray(x?.reports)?x.reports:[]}catch(e){return []}}
+function queueCloudStateSave(){
+ if(!isCloud()||!client||!session||role!=='manager'||cloudLoading)return;
+ clearTimeout(cloudSaveTimer);cloudSaveTimer=setTimeout(()=>saveCloudState(),900);
+}
+async function saveCloudState(){
+ if(!isCloud()||!client||!session||role!=='manager')return;
+ clearTimeout(cloudSaveTimer);
+ if(cloudSaving){cloudSavePending=true;return}
+ cloudSaving=true;
+ const payload={catalog:structuredClone(state.catalog),targets:structuredClone(state.targets),draft:structuredClone(state.draft)};
+ let error=null;
+ try{
+  const result=await client.from('app_state').upsert({id:1,payload,updated_by:session.user.id,updated_at:new Date().toISOString()},{onConflict:'id'});
+  error=result.error;
+ }catch(e){error=e}
+ cloudSaving=false;
+ if(error){syncError='Não foi possível guardar os preços e o cardápio na nuvem: '+error.message;toast(syncError,'error')}
+ else syncError='';
+ if(cloudSavePending){cloudSavePending=false;cloudSaveTimer=setTimeout(()=>saveCloudState(),150)}
+}
+async function loadCloudState(){
+ if(!client||!session||role!=='manager')return;
+ const {data,error}=await client.from('app_state').select('payload').eq('id',1).maybeSingle();
+ if(error){syncError='Erro ao obter preços da nuvem: '+error.message;return}
+ if(data?.payload && Array.isArray(data.payload.catalog)&&data.payload.targets&&data.payload.draft){
+  state.catalog=mergeBaseCuts(structuredClone(data.payload.catalog));
+  state.targets=structuredClone(data.payload.targets);
+  state.draft=structuredClone(data.payload.draft);
+  persist();
+ } else if(!data){await saveCloudState()}
+}
+async function importLocalReportsToCloud(){
+ if(!isCloud()||!session||role!=='manager')return;
+ const backups=pendingLocalReports();
+ const existing=new Set(state.reports.map(r=>r.report_date));
+ const missing=backups.filter(r=>r.report_date&&r.payload?.draft&&!existing.has(r.report_date));
+ if(!missing.length){toast('Não há relatórios locais pendentes de importação.');return}
+ if(!confirm('Enviar '+missing.length+' relatórios locais ao banco? Relatórios já existentes na nuvem serão preservados.'))return;
+ const batch=missing.map(r=>({report_date:r.report_date,payload:r.payload,created_by:session.user.id}));
+ const {error}=await client.from('day_reports').insert(batch);
+ if(error){toast('Falha na importação: '+error.message,'error');return}
+ await fetchReports();toast(missing.length+' relatórios locais enviados para a nuvem.');
+}
+async function startCloud(){if(!isCloud()){session=null;role='viewer';render();return}try{if(!localStorage.getItem(PRE_CLOUD_BACKUP_KEY))localStorage.setItem(PRE_CLOUD_BACKUP_KEY,JSON.stringify(state))}catch(e){}cloudLoading=true;render();try{if(!window.supabase){await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.onload=resolve;s.onerror=()=>reject(new Error('Biblioteca de nuvem indisponível. Verifique sua internet.'));document.head.appendChild(s)})}client=window.supabase.createClient(cloudCfg.url,cloudCfg.anonKey);const {data,error}=await client.auth.getSession();if(error)throw error;session=data.session;if(session)await afterLogin();else{cloudLoading=false;render()}}catch(e){cloudLoading=false;syncError=`Falha ao conectar à nuvem: ${e.message}`;session=null;render()}}
+async function afterLogin(){
+ cloudLoading=true;render();
+ const {data,error}=await client.from('profiles').select('role').eq('user_id',session.user.id).maybeSingle();
+ if(error||!data?.role){
+  cloudLoading=false;
+  authError=error?'Banco de dados ainda não configurado: '+error.message:'Sua conta não tem permissão cadastrada. Peça ao administrador para autorizá-la no Supabase.';
+  session=null;role='viewer';await client.auth.signOut();renderLogin();return;
+ }
+ role=data.role;
+ if(role==='manager')await loadCloudState();
+ await fetchReports();
+ cloudLoading=false;tab=readOnly()?'consulta':'planejamento';render();
+ try{
+  client.removeAllChannels();
+  let channel=client.channel('batan-relatorios').on('postgres_changes',{event:'*',schema:'public',table:'day_reports'},()=>fetchReports());
+  if(role==='manager')channel=channel.on('postgres_changes',{event:'*',schema:'public',table:'app_state'},()=>{
+   if(!cloudSaving&&!cloudSaveTimer&&!document.activeElement?.matches('input,select,textarea'))loadCloudState().then(()=>render());
+  });
+  channel.subscribe();
+ }catch(e){}
+}
 async function fetchReports(){if(!client||!session)return;const {data,error}=await client.from('day_reports').select('report_date,payload').order('report_date',{ascending:false}).limit(365);if(error){syncError=`Erro ao buscar relatórios: ${error.message}`;return}syncError='';state.reports=data||[];persist();if(!selectedDate||!state.reports.some(r=>r.report_date===selectedDate))selectedDate=state.reports[0]?.report_date||null;render()}
 function loginSubmit(e){e.preventDefault();if(loginPending)return;const form=e.target;const email=form.querySelector('[name=email]').value.trim(),password=form.querySelector('[name=password]').value;loginPending=true;authError='';renderLogin();client.auth.signInWithPassword({email,password}).then(async ({data,error})=>{loginPending=false;if(error){authError='E-mail ou senha inválidos ou conta não autorizada.';renderLogin();return}session=data.session;await afterLogin()}).catch(err=>{loginPending=false;authError=err.message;renderLogin()})}
 async function onAction(action,el){const idx=Number(el.dataset.idx),date=el.dataset.date;
@@ -305,19 +362,21 @@ async function onAction(action,el){const idx=Number(el.dataset.idx),date=el.data
  if(action==='remove-catalog'){const it=state.catalog[idx];if(!it)return;const used=state.draft.recipe.some(r=>r.ingredientId===it.id)||Object.values(state.draft.base).includes(it.id);if(used){toast('Esse ingrediente está sendo usado no cardápio atual. Substitua-o antes de excluir.','error');return}if(!confirm(`Excluir ${it.name}?`))return;state.catalog.splice(idx,1)}
  if(action==='select-report'){selectedDate=date;state.selectedDate=date;persist()}
  if(action==='open-selected'){tab=readOnly()?'consulta':'resultado';if(!readOnly()&&getReport()){const r=getReport();state.draft=structuredClone(r.payload.draft);state.catalog=mergeBaseCuts(structuredClone(r.payload.catalog));state.targets=structuredClone(r.payload.targets)}}
- if(action==='edit-selected'){const r=getReport();if(!r)return;state.draft=structuredClone(r.payload.draft);state.catalog=structuredClone(r.payload.catalog);state.targets=structuredClone(r.payload.targets);tab='planejamento';toast('Relatório carregado para edição. Salve para atualizar.')}
+ if(action==='edit-selected'){const r=getReport();if(!r)return;state.draft=structuredClone(r.payload.draft);state.catalog=mergeBaseCuts(structuredClone(r.payload.catalog));state.targets=structuredClone(r.payload.targets);tab='planejamento';toast('Relatório carregado para edição. Salve para atualizar.')}
  if(action==='print'){window.print();return}
  if(action==='csv'){exportCsv();return}
  if(action==='share'){shareReport();return}
  if(action==='copy-view-link'){copyViewLink();return}
  if(action==='backup'){download('batan-grill-backup-'+today()+'.json','application/json;charset=utf-8',JSON.stringify(state,null,2));return}
+ if(action==='import-local-reports'){await importLocalReportsToCloud();return}
  if(action==='save-cloud'){const url=document.getElementById('cloud-url').value.trim().replace(/\/$/,'');const key=document.getElementById('cloud-key').value.trim();if((url&&!key)||(!url&&key)){toast('Preencha URL e chave pública juntas.','error');return}if(url&&!/^https:\/\/[\w.-]+\.supabase\.co$/.test(url)){toast('Informe uma URL válida do Supabase.','error');return}cloudCfg={url,anonKey:key};localStorage.setItem(CLOUD_STORAGE,JSON.stringify(cloudCfg));if(isCloud())await startCloud();else render();return}
  if(action==='remove-cloud'){if(!confirm('Sair da nuvem e usar apenas os dados deste navegador?'))return;cloudCfg={url:'',anonKey:''};localStorage.setItem(CLOUD_STORAGE,JSON.stringify(cloudCfg));session=null;client=null;role='viewer';syncError='';toast('Modo local ativado.')}
- if(action==='logout'){await client?.auth.signOut();session=null;role='viewer';tab='consulta';renderLogin();return}
- persist();render()}
+ if(action==='logout'){await client?.auth.signOut();session=null;role='viewer';state.reports=[];state.catalog=structuredClone(baseCatalog);state.draft=defaultDraft();state.targets=structuredClone(defTargets);persist();tab='consulta';renderLogin();return}
+ persist();queueCloudStateSave();render()}
 document.addEventListener('change',async e=>{const x=e.target;if(x.dataset.bind){if(readOnly())return;updateBind(x.dataset.bind,x.value)}if(x.id==='import-file'){if(isCloud()){toast('Faça backup/restauração pelo banco de dados na nuvem.','error');return}const f=x.files?.[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!Array.isArray(data.catalog)||!data.targets||!data.draft||!Array.isArray(data.reports))throw new Error('Formato inválido');if(!confirm('Restaurar este backup? Os dados locais atuais serão substituídos.'))return;state=data;state.catalog=mergeBaseCuts(state.catalog);state.catalogSchema=CATALOG_SCHEMA;persist();render();toast('Backup restaurado.')}catch(err){toast(`Backup inválido: ${err.message}`,'error')}}});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(b){e.preventDefault();onAction(b.dataset.action,b).catch(err=>toast(err.message,'error'))}});
 document.addEventListener('submit',e=>{if(e.target.id==='login-form')loginSubmit(e)});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&isCloud()&&session){fetchReports();if(role==='manager'&&!cloudSaving&&!cloudSaveTimer)loadCloudState().then(()=>render())}});
 if(sharedReport){selectedDate=sharedReport.report_date;tab='consulta';render()}else if(isCloud())startCloud();else render();
 })();
 
