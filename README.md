@@ -1,34 +1,45 @@
 # Batan Grill — Gestão de marmitas
 
-Sistema em português para controle de produção, pesos, receitas, preços por kg cru, custos dos alimentos e margem de contribuição após **12% de imposto** (sem incluir outros custos).
+Aplicação do Batan Grill (gestão e consulta), publicada a partir deste repositório GitHub. Inclui cardápios, cortes por categoria, rendimentos, custos, saquinhos de salada, relatórios e margem de contribuição.
 
-- `index.html`: gestão, ingredientes, cortes bovinos e suínos, receitas, preços e relatórios.
-- `consulta.html`: interface de consulta, com permissões efetivas ao ativar o banco Supabase.
-- `config.js`: configuração **pública** do Supabase (URL + chave publishable/anon, nunca segredo).
-- `supabase.sql`: schema e políticas de acesso seguro por papéis.
-- `CONFIGURAR_NUVEM.md`: etapas para ativar armazenamento em qualquer dispositivo e credenciais separadas.
-- `netlify.toml`: publicação do site estático no Netlify.
+**Fórmula da margem:** receita − imposto de 12% − custo dos alimentos usados nas marmitas − custo dos ingredientes da salada − **custo da embalagem dos saquinhos de salada**. Não inclui outras embalagens, pessoal, gás, energia, transporte, aluguel ou despesas indiretas.
 
-## Hospedagem gratuita: Netlify
+## Situação da nuvem
+- Projeto Supabase: `Batan Grill Marmitas` (`eibwsstgeswiaoiajqho`, região São Paulo, plano Free).
+- `public.profiles`: autenticação por e-mail + senha e papéis `manager` / `viewer`.
+- `public.day_reports`: relatórios diários centralizados, sincronizados após salvar.
+- `public.app_state`: catálogo, preços, rendimentos, metas, cardápio em edição e revisão semanal.
+- `config.js`: URL + chave pública publishable já configuradas para este projeto.
+- **Pendência:** criar contas no **Authentication > Users** no painel Supabase e associá-las a papéis no banco. Até isso, o login não permite uso.
+- Regras Row Level Security ativas, consulta restrita a relatórios de contas autorizadas e escrita restrita à gestão.
 
-1. Acesse https://app.netlify.com/start e crie uma conta Free.
-2. Escolha **Import an existing project** → **GitHub**, autorize o repositório `mguadagnimspanhol-art/batan-grill`.
-3. Confirme a branch `main`, **Build command** em branco e **Publish directory** em `.` (raiz).
-4. Clique em **Deploy / Publish**. A integração com o GitHub fará publicações automáticas sempre que o código mudar.
-5. Abra **Project overview → Customize → Project name** e tente `bgmarmitaria`. Se disponível, o endereço será `https://bgmarmitaria.netlify.app/`, com a consulta em `/consulta.html`. O nome pode não estar livre.
+**Senhas:** são criadas no Supabase, não são armazenadas no GitHub. Não compartilhe senhas nem chaves secretas com ninguém. Se quiser abrir o aplicativo em outro dispositivo, use seu e-mail + senha Supabase.
 
-**Não haverá link Netlify ativo até o projeto ser criado na conta Netlify.** A publicação GitHub Pages anterior ainda existe, mas não é a opção recomendada para este uso comercial.
+## Configurar contas
+1. Acesse https://supabase.com/dashboard/project/eibwsstgeswiaoiajqho/auth/users
+2. Crie duas contas com e-mails e senhas próprios: uma para sua gerente (`manager`) e uma para sua consulta (`viewer`).
+3. Abra o SQL Editor em https://supabase.com/dashboard/project/eibwsstgeswiaoiajqho/sql/new e execute as duas instruções no final de `supabase.sql`, substituindo **somente os endereços de e-mail**.
+4. Em Authentication > Providers > Email, desabilite **Allow new users to sign up** para evitar inscrições externas.
+5. Acesse a URL do site e faça login. Nunca insira a senha no GitHub.
 
-## Banco de dados, login e sincronização: Supabase
+## Hospedagem no Netlify (gratuita)
+O repositório já contém `netlify.toml` e `design.css`. Para publicar:
+1. https://app.netlify.com/start → Import an existing project → GitHub → repositório `mguadagnimspanhol-art/batan-grill`.
+2. Branch `main`, sem comando de build, diretório `.`, plano Free.
+3. Após publicar, escolha o nome `bgmarmitaria` se estiver disponível. O domínio gratuito é `*.netlify.app`.
+4. Deploys novos ocorrem automaticamente ao atualizar o GitHub. Não há migração Netlify concluída até o site ser criado lá.
 
-Confira o arquivo [CONFIGURAR_NUVEM.md](CONFIGURAR_NUVEM.md). O modo online exige um projeto Supabase configurado, a execução de `supabase.sql`, duas contas autenticadas (gerente / consulta), atribuição das permissões e configuração pública `config.js`.
+A versão do GitHub Pages permanece tecnicamente acessível, mas deve ser substituída pelo Netlify para uso comercial.
 
-Enquanto não houver uma URL e chave pública em `config.js`, o sistema funciona apenas localmente no navegador: **não há sincronização nem proteção por senha real**. Com o banco devidamente configurado e RLS ligado, dados são centralizados e o acesso é protegido por login.
+## Arquivos
+- `index.html` — interface de gestão.
+- `consulta.html` — interface de consulta.
+- `design.css` — visual responsivo.
+- `config.js` — conexão pública ao Supabase, sem senhas.
+- `supabase.sql` — estrutura e políticas seguras.
+- `CONFIGURAR_NUVEM.md` — guia do banco.
+- `netlify.toml` — configuração Netlify.
 
-Não coloque senhas ou chave `service_role` no GitHub, em mensagens ou em `config.js`. Senhas são gerenciadas pelo Supabase Auth.
+No modo nuvem, o servidor armazena os relatórios e o estado editável; não há sincronização anterior de dados locais até uma importação. Faça backup do navegador antigo antes de começar.
 
-**Observação:** planos gratuitos têm limites e o Supabase pode pausar projetos com pouca atividade. Faça backups periódicos.
-
-## Cálculo financeiro
-
-Resultado por marmita = preço de venda − imposto de 12% − custo dos alimentos crus ajustado pelo rendimento. O percentual é **margem após alimentos e imposto**, não lucro líquido contábil.
+Planos gratuitos têm limites, e projetos Supabase gratuitos podem ser pausados por inatividade.
