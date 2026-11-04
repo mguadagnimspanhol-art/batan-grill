@@ -70,3 +70,55 @@ body{background:linear-gradient(180deg,#eef4ef 0,#f7f9f6 270px,#f2f5f2 100%);fon
  .table th,.table td{padding:9px 10px}
 }
 @media(max-width:380px){.grid.cols-4{grid-template-columns:1fr}}
+
+
+/* Gabarito de montagem: leitura rápida pela equipe da cozinha */
+.assembly-cta{display:flex;align-items:center;justify-content:space-between;gap:18px;background:linear-gradient(115deg,#ecf7ed,#f8fdf8);border:1px solid #c7e3d0;border-radius:18px}
+.assembly-cta h2{margin:0 0 3px;color:#14553d}.assembly-cta p{color:#496b57;font-size:13px;margin:0;max-width:680px}
+.assembly-cta .btn{flex-shrink:0}
+.assembly-wrap{scroll-margin-top:90px}
+.assembly-sheet{border:1px solid #d8e7db;background:#fff;border-radius:20px;box-shadow:var(--shadow);padding:22px}
+.assembly-header{border-bottom:1px solid #dfebe2;padding-bottom:15px;margin-bottom:17px}
+.assembly-brand{font-size:11px;color:#24805c;font-weight:850;letter-spacing:1.35px}
+.assembly-header h2{margin:3px 0;font-size:23px;letter-spacing:-.65px}
+.assembly-header p{margin:0;color:#637b6e;font-size:13px}
+.assembly-notice{padding:12px 14px;background:#f0f8f2;border:1px solid #d2e9d8;color:#285840;border-radius:12px;font-size:13px;margin:0 0 16px}
+.assembly-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.assembly-card{border:1px solid #d8e5de;border-radius:15px;overflow:hidden;background:#fff;display:flex;flex-direction:column;min-width:0}
+.assembly-top{background:#123d30;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px}
+.assembly-caption{font-size:10px;color:#b8d9c6;letter-spacing:1px;font-weight:850}
+.assembly-top h3{font-size:21px;color:#fff;margin:1px 0 0}
+.assembly-weight{display:flex;flex-direction:column;align-items:flex-end;line-height:1.25;white-space:nowrap}
+.assembly-weight b{font-size:20px}.assembly-weight span{font-size:10px;color:#d5e9d9}
+.assembly-count{padding:10px 15px;background:#eaf5ed;color:#256044;font-size:12px;font-weight:800}
+.assembly-instruction{font-size:11px;letter-spacing:.45px;font-weight:850;color:#537262;margin:14px 15px 7px}
+.assembly-line{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin:0 15px;padding:11px 0;border-bottom:1px solid #edf1ee;font-size:13px}
+.assembly-line strong{white-space:nowrap;font-size:19px;color:#145b44}
+.assembly-line span{line-height:1.35;word-wrap:break-word}
+.assembly-mix{font-size:12px;line-height:1.45;background:#fff7e5;border-radius:10px;padding:10px;margin:12px 13px;color:#6e5422}
+.assembly-warning{font-size:12px;background:#fff2ee;color:#984633;padding:8px 10px;margin:10px;border-radius:8px}
+.assembly-salad{padding:13px 15px;background:#eaf6ed;margin:14px 13px;border-radius:11px;display:flex;flex-direction:column;gap:3px;color:#145a3f;font-size:13px}
+.assembly-salad small{font-size:11px;color:#557f65}
+.assembly-lot{border-top:1px solid #dbe8df;padding:13px 15px 15px;margin-top:auto;background:#f9fcfa}
+.assembly-lot>b{display:block;color:#466d56;font-size:12px;margin-bottom:8px}
+.assembly-lot>div{display:flex;justify-content:space-between;gap:7px;padding:3px 0;font-size:11px}
+.assembly-lot>div strong{white-space:nowrap}
+.assembly-noorders{font-size:12px;color:#819288;margin:auto 15px 15px}
+.assembly-footer{border-top:1px solid #dbe8df;padding-top:13px;margin-top:18px;font-size:12px;color:#526c5c}
+.assembly-footer span{display:block;margin-top:3px;font-size:11px}
+#assembly-print-host{display:none}
+@media(max-width:900px){.assembly-grid{grid-template-columns:1fr}.assembly-cta{flex-direction:column;align-items:stretch}.assembly-cta .btn{width:100%}.assembly-card{max-width:none}}
+@media print{
+ @page{size:A4 landscape;margin:10mm}
+ body.printing-assembly{background:#fff!important;color:#111}
+ body.printing-assembly #app,body.printing-assembly #toast{display:none!important}
+ body.printing-assembly #assembly-print-host{display:block!important}
+ body.printing-assembly .assembly-sheet{border:0!important;box-shadow:none!important;padding:0!important}
+ body.printing-assembly .assembly-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px!important}
+ body.printing-assembly .assembly-card{break-inside:avoid;page-break-inside:avoid;border-color:#b7c9bd!important}
+ body.printing-assembly .assembly-top{background:#123d30!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ body.printing-assembly .assembly-count,body.printing-assembly .assembly-salad{background:#eaf5ed!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ body.printing-assembly .assembly-line{padding:7px 0}
+ body.printing-assembly .assembly-lot{padding-top:9px;padding-bottom:8px}
+ body.printing-assembly .assembly-notice{padding:9px 12px}
+}
