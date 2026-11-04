@@ -128,6 +128,18 @@ begin
   end if;
 end $$;
 
+-- Sincronização do cardápio e ingredientes em edição entre dispositivos autorizados.
+do $
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+    and not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'app_state'
+    ) then
+    alter publication supabase_realtime add table public.app_state;
+  end if;
+end $;
+
 -- IMPORTANTE: desabilite o cadastro público em Authentication > Providers > Email.
 -- Crie manualmente 2 usuários em Authentication > Users (um gerente e um consulta).
 -- Depois substitua os e-mails abaixo e EXECUTE AS DUAS INSTRUÇÕES SEPARADAMENTE.
