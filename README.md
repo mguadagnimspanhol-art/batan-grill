@@ -1,18 +1,34 @@
-# Batan Grill — Controle de Marmitas
+# Batan Grill — Gestão de marmitas
 
-Site estático em português para gestão e consulta de custos de marmitas. O cálculo desconta apenas **12% de imposto sobre o faturamento** e **custo dos alimentos** (não inclui embalagem, mão de obra, aluguel ou frete).
+Sistema em português para controle de produção, pesos, receitas, preços por kg cru, custos dos alimentos e margem de contribuição após **12% de imposto** (sem incluir outros custos).
 
-- `index.html`: gestão, cardápios, pesos por tamanho, receitas de pratos mistos, preços de insumos crus, resultados e relatórios.
-- `consulta.html`: interface somente de leitura no navegador (não é controle de permissão de servidor).
+- `index.html`: gestão, ingredientes, cortes bovinos e suínos, receitas, preços e relatórios.
+- `consulta.html`: interface de consulta, com permissões efetivas ao ativar o banco Supabase.
+- `config.js`: configuração **pública** do Supabase (URL + chave publishable/anon, nunca segredo).
+- `supabase.sql`: schema e políticas de acesso seguro por papéis.
+- `CONFIGURAR_NUVEM.md`: etapas para ativar armazenamento em qualquer dispositivo e credenciais separadas.
+- `netlify.toml`: publicação do site estático no Netlify.
 
-## Como colocar online
+## Hospedagem gratuita: Netlify
 
-No GitHub, abra **Settings > Pages > Build and deployment**. Escolha **Deploy from a branch**, branch **main**, pasta **/(root)** e clique **Save**.
+1. Acesse https://app.netlify.com/start e crie uma conta Free.
+2. Escolha **Import an existing project** → **GitHub**, autorize o repositório `mguadagnimspanhol-art/batan-grill`.
+3. Confirme a branch `main`, **Build command** em branco e **Publish directory** em `.` (raiz).
+4. Clique em **Deploy / Publish**. A integração com o GitHub fará publicações automáticas sempre que o código mudar.
+5. Abra **Project overview → Customize → Project name** e tente `bgmarmitaria`. Se disponível, o endereço será `https://bgmarmitaria.netlify.app/`, com a consulta em `/consulta.html`. O nome pode não estar livre.
 
-Links esperados após a publicação:
-- Gestão: https://mguadagnimspanhol-art.github.io/batan-grill/
-- Consulta: https://mguadagnimspanhol-art.github.io/batan-grill/consulta.html
+**Não haverá link Netlify ativo até o projeto ser criado na conta Netlify.** A publicação GitHub Pages anterior ainda existe, mas não é a opção recomendada para este uso comercial.
 
-**Importante:** Inicialmente os dados ficam salvos somente no navegador onde foram lançados. O GitHub Pages hospeda os arquivos mas **não sincroniza registros entre celulares**. A sincronização exige conectar a um backend com contas e permissões como o Supabase antes de usar a interface de consulta em outro aparelho. Sem backend, a consulta no mesmo navegador pode ver os dados locais; um link com relatório compartilhado é instantâneo estático, não atualizado em tempo real.
+## Banco de dados, login e sincronização: Supabase
 
-Os preços reais dos insumos precisam ser informados. Fatores de rendimento são estimativas editáveis. Não publique credenciais sigilosas no repositório público.
+Confira o arquivo [CONFIGURAR_NUVEM.md](CONFIGURAR_NUVEM.md). O modo online exige um projeto Supabase configurado, a execução de `supabase.sql`, duas contas autenticadas (gerente / consulta), atribuição das permissões e configuração pública `config.js`.
+
+Enquanto não houver uma URL e chave pública em `config.js`, o sistema funciona apenas localmente no navegador: **não há sincronização nem proteção por senha real**. Com o banco devidamente configurado e RLS ligado, dados são centralizados e o acesso é protegido por login.
+
+Não coloque senhas ou chave `service_role` no GitHub, em mensagens ou em `config.js`. Senhas são gerenciadas pelo Supabase Auth.
+
+**Observação:** planos gratuitos têm limites e o Supabase pode pausar projetos com pouca atividade. Faça backups periódicos.
+
+## Cálculo financeiro
+
+Resultado por marmita = preço de venda − imposto de 12% − custo dos alimentos crus ajustado pelo rendimento. O percentual é **margem após alimentos e imposto**, não lucro líquido contábil.
