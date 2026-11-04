@@ -19,6 +19,7 @@
 .weekly-status.reviewed strong{color:#176247}
 .weekly-status p{margin:4px 0 0;font-size:13px;color:#64747b}
 @media(max-width:680px){.weekly-reminder,.weekly-status{flex-direction:column;align-items:stretch}.weekly-reminder .btn,.weekly-status .btn{width:100%}}
+.cut-group-heading td{background:#edf4f0!important;color:#176255!important;font-weight:850!important;letter-spacing:.25px;font-size:13px!important;padding:13px 14px!important;border-top:2px solid #dcebe4!important}
 </style>
   <script>
 // Opcional: para sincronizar dois ou mais aparelhos em tempo real,
@@ -45,14 +46,95 @@ const baseCatalog=[
  ['arroz','Arroz branco', 'carbo',2.6],['macarrao','Macarrão', 'carbo',2.4],['batata','Batata', 'carbo',.90],['mandioca','Mandioca', 'carbo',.88],['pure','Purê de batata (base crua*)','carbo',.95],
  ['feijao','Feijão carioca','beans',2.5],['feijao_preto','Feijão preto','beans',2.5],
  ['legumes','Legumes variados','veg',.85],['cenoura','Cenoura','veg',.90],['abobrinha','Abobrinha','veg',.80],['brocolis','Brócolis','veg',.85],
- ['frango','Frango','protein',.75],['carne_moida','Carne moída bovina','protein',.75],['carne_bovina','Carne bovina em cubos','protein',.70],['carne_suina','Carne suína','protein',.75],['tilapia','Tilápia','protein',.78],['linguica','Linguiça','protein',.78]
-].map(([id,name,group,yieldFactor])=>({id,name,group,yieldFactor,price:null}));
+ // Cortes bovinos com osso: rendimento pronto inclui o osso quando ele vai para a marmita.
+ ['costela_minga_osso','Costela minga com osso','protein',.72,'Bovinos · com osso'],
+ ['costela_ponta_agulha','Costela ponta de agulha com osso','protein',.72,'Bovinos · com osso'],
+ ['costela_ripa','Costela ripa com osso','protein',.73,'Bovinos · com osso'],
+ ['costela_janela','Costela janela com osso','protein',.73,'Bovinos · com osso'],
+ ['costela_gaucha','Costela gaúcha com osso','protein',.74,'Bovinos · com osso'],
+ ['rabo_bovino','Rabo bovino (rabada)','protein',.75,'Bovinos · com osso'],
+ ['carne_panela_osso','Carne de panela com osso','protein',.74,'Bovinos · com osso'],
+ ['musculo_osso','Músculo bovino com osso','protein',.74,'Bovinos · com osso'],
+ ['ossobuco','Ossobuco bovino','protein',.75,'Bovinos · com osso'],
+ ['short_rib_osso','Short rib com osso','protein',.73,'Bovinos · com osso'],
+ // Cortes bovinos sem osso.
+ ['costela_minga_sem_osso','Costela minga sem osso','protein',.68,'Bovinos · sem osso'],
+ ['costela_sem_osso','Costela bovina desossada','protein',.68,'Bovinos · sem osso'],
+ ['carne_panela_sem_osso','Carne de panela sem osso','protein',.72,'Bovinos · sem osso'],
+ ['acém','Acém bovino','protein',.72,'Bovinos · sem osso'],
+ ['paleta_bovina','Paleta bovina sem osso','protein',.72,'Bovinos · sem osso'],
+ ['musculo_sem_osso','Músculo bovino sem osso','protein',.68,'Bovinos · sem osso'],
+ ['peito_bovino','Peito bovino sem osso','protein',.65,'Bovinos · sem osso'],
+ ['coxao_duro','Coxão duro bovino','protein',.72,'Bovinos · sem osso'],
+ ['coxao_mole','Coxão mole bovino','protein',.72,'Bovinos · sem osso'],
+ ['patinho','Patinho bovino','protein',.74,'Bovinos · sem osso'],
+ ['fraldinha','Fraldinha bovina','protein',.70,'Bovinos · sem osso'],
+ ['alcatra','Alcatra bovina','protein',.74,'Bovinos · sem osso'],
+ ['contrafile','Contrafilé bovino','protein',.72,'Bovinos · sem osso'],
+ ['cupim','Cupim bovino sem osso','protein',.62,'Bovinos · sem osso'],
+ ['lagarto','Lagarto bovino','protein',.70,'Bovinos · sem osso'],
+ ['carne_moida','Carne moída bovina','protein',.75,'Bovinos · sem osso'],
+ ['carne_bovina','Carne bovina em cubos (genérico)','protein',.70,'Bovinos · sem osso'],
+ // Suínos com osso.
+ ['costelinha_suina_osso','Costelinha suína com osso','protein',.73,'Suínos · com osso'],
+ ['bisteca_suina','Bisteca suína com osso','protein',.76,'Suínos · com osso'],
+ ['pernil_suino_osso','Pernil suíno com osso','protein',.73,'Suínos · com osso'],
+ ['joelho_suino','Joelho suíno (eisbein)','protein',.75,'Suínos · com osso'],
+ ['pe_suino','Pé suíno','protein',.75,'Suínos · com osso'],
+ ['espinhaco_suino','Espinhaço suíno','protein',.75,'Suínos · com osso'],
+ // Suínos sem osso.
+ ['pernil_suino_sem_osso','Pernil suíno sem osso','protein',.73,'Suínos · sem osso'],
+ ['paleta_suina','Paleta suína sem osso','protein',.72,'Suínos · sem osso'],
+ ['lombo_suino','Lombo suíno','protein',.75,'Suínos · sem osso'],
+ ['copa_lombo','Copa-lombo suíno','protein',.73,'Suínos · sem osso'],
+ ['panceta','Panceta suína','protein',.70,'Suínos · sem osso'],
+ ['barriga_suina','Barriga suína sem osso','protein',.70,'Suínos · sem osso'],
+ ['file_mignon_suino','Filé-mignon suíno','protein',.77,'Suínos · sem osso'],
+ ['costelinha_suina_sem_osso','Costelinha suína desossada','protein',.70,'Suínos · sem osso'],
+ ['carne_suina','Carne suína (genérica)','protein',.75,'Suínos · sem osso'],
+ // Aves.
+ ['frango_inteiro','Frango inteiro com osso','protein',.75,'Aves · com osso'],
+ ['coxa_sobrecoxa','Coxa e sobrecoxa com osso','protein',.76,'Aves · com osso'],
+ ['coxa_frango','Coxa de frango com osso','protein',.76,'Aves · com osso'],
+ ['sobrecoxa_osso','Sobrecoxa de frango com osso','protein',.76,'Aves · com osso'],
+ ['asa_frango','Asa de frango com osso','protein',.76,'Aves · com osso'],
+ ['peito_frango','Peito de frango sem osso','protein',.75,'Aves · sem osso'],
+ ['sobrecoxa_sem_osso','Sobrecoxa de frango desossada','protein',.75,'Aves · sem osso'],
+ ['frango_desfiado','Frango desfiado','protein',.72,'Aves · sem osso'],
+ ['frango','Frango (genérico)','protein',.75,'Aves · sem osso'],
+ // Ovos: o preço é por kg de ovo cru com casca, não por unidade.
+ ['ovo_frito','Ovo frito','protein',.82,'Ovos'],
+ ['ovo_cozido','Ovo cozido','protein',.82,'Ovos'],
+ ['ovo_mexido','Ovo mexido','protein',.84,'Ovos'],
+ // Peixes e frutos do mar.
+ ['tilapia','Tilápia (filé)','protein',.78,'Peixes e frutos do mar'],
+ ['tilapia_inteira','Tilápia inteira com espinha','protein',.72,'Peixes e frutos do mar'],
+ ['merluza','Merluza (filé)','protein',.77,'Peixes e frutos do mar'],
+ ['sardinha_inteira','Sardinha inteira','protein',.75,'Peixes e frutos do mar'],
+ ['salmao_file','Salmão (filé)','protein',.78,'Peixes e frutos do mar'],
+ ['camarao_limpo','Camarão limpo','protein',.78,'Peixes e frutos do mar'],
+ ['camarao_inteiro','Camarão inteiro com casca','protein',.77,'Peixes e frutos do mar'],
+ // Embutidos e preparados.
+ ['linguica','Linguiça (genérica)','protein',.78,'Embutidos e preparados'],
+ ['linguica_toscana','Linguiça toscana','protein',.78,'Embutidos e preparados'],
+ ['calabresa','Linguiça calabresa','protein',.90,'Embutidos e preparados'],
+ ['bacon','Bacon suíno','protein',.70,'Embutidos e preparados'],
+ ['carne_seca','Carne-seca dessalgada e cozida','protein',.85,'Embutidos e preparados']
+].map(([id,name,group,yieldFactor,subcategory])=>({id,name,group,yieldFactor,price:null,subcategory:subcategory||GROUPS[group]}));
 const defTargets={P:{carbo:190,protein:95,beans:70,veg:70},M:{carbo:300,protein:135,beans:110,veg:130},G:{carbo:395,protein:170,beans:140,veg:145}};
 const newId=()=>('id'+Math.random().toString(36).slice(2,10));
 const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
 const defaultDraft=()=>({date:today(),menu:'Frango com arroz, feijão e legumes',people:35,base:{carbo:'arroz',beans:'feijao',veg:'legumes'},recipe:[{id:newId(),ingredientId:'frango',rawKg:1}],orders:[{id:newId(),customer:'Empresa / contrato',size:'G',qty:35,price:19}]});
-const defaultState=()=>({catalog:structuredClone(baseCatalog),targets:structuredClone(defTargets),draft:defaultDraft(),reports:[],preferredTab:'planejamento',selectedDate:null});
-const loadStore=()=>{try{const s=JSON.parse(localStorage.getItem(STORAGE));if(s&&Array.isArray(s.catalog)&&s.targets&&s.draft&&Array.isArray(s.reports))return s}catch(e){}return defaultState()};
+const CATALOG_SCHEMA=3;
+// Acrescenta cortes novos preservando preços, rendimentos e itens personalizados anteriores.
+function mergeBaseCuts(catalog){if(!Array.isArray(catalog))return structuredClone(baseCatalog);
+ const ids=new Set(catalog.map(x=>x.id));const defaults=new Map(baseCatalog.map(x=>[x.id,x]));
+ for(const x of catalog){if(!x.subcategory&&defaults.has(x.id))x.subcategory=defaults.get(x.id).subcategory;}
+ for(const item of baseCatalog)if(!ids.has(item.id))catalog.push(structuredClone(item));
+ return catalog;
+}
+const defaultState=()=>({catalog:structuredClone(baseCatalog),catalogSchema:CATALOG_SCHEMA,targets:structuredClone(defTargets),draft:defaultDraft(),reports:[],preferredTab:'planejamento',selectedDate:null});
+const loadStore=()=>{try{const s=JSON.parse(localStorage.getItem(STORAGE));if(s&&Array.isArray(s.catalog)&&s.targets&&s.draft&&Array.isArray(s.reports)){if(s.catalogSchema!==CATALOG_SCHEMA){s.catalog=mergeBaseCuts(s.catalog);s.catalogSchema=CATALOG_SCHEMA;}return s}}catch(e){}return defaultState()};
 let state=loadStore(),tab=state.preferredTab||'planejamento',client=null,session=null,role='viewer',cloudLoading=false,authError='',syncError='',loginPending=false,selectedDate=state.selectedDate||null;
 let cloudCfg=(()=>{try{const local=JSON.parse(localStorage.getItem(CLOUD_STORAGE)||'null');return local?.url&&local?.anonKey?local:(window.BATAN_CLOUD||{})}catch(e){return window.BATAN_CLOUD||{}}})();
 const isCloud=()=>Boolean(cloudCfg.url?.trim()&&cloudCfg.anonKey?.trim());
@@ -71,7 +153,15 @@ const datebr=d=>{if(!d)return '—';const [y,m,day]=String(d).split('-');return 
 const persist=()=>{try{localStorage.setItem(STORAGE,JSON.stringify(state))}catch(e){toast('Armazenamento local cheio. Exporte o backup.','error')}};
 function toast(msg,type='ok'){let e=document.getElementById('toast');if(!e){e=document.createElement('div');e.id='toast';e.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);max-width:min(90vw,540px);padding:12px 18px;border-radius:12px;box-shadow:0 5px 30px #132b2b36;color:white;z-index:99;text-align:center;font-weight:700;font-size:13px';document.body.appendChild(e)}e.style.background=type==='error'?'#a93d39':'#176960';e.textContent=msg;e.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>e.hidden=true,4200)}
 function chooseIngredient(id,catalog=state.catalog){return catalog.find(i=>i.id===id)}
-function optionList(group,selected,catalog=state.catalog){return catalog.filter(i=>!group||i.group===group).map(i=>`<option value="${esc(i.id)}" ${i.id===selected?'selected':''}>${esc(i.name)}</option>`).join('')}
+const PROTEIN_CATEGORIES=['Bovinos · com osso','Bovinos · sem osso','Suínos · com osso','Suínos · sem osso','Aves · com osso','Aves · sem osso','Ovos','Peixes e frutos do mar','Embutidos e preparados','Outras proteínas'];
+const CUT_CATEGORY_ORDER=[GROUPS.carbo,GROUPS.beans,GROUPS.veg,...PROTEIN_CATEGORIES];
+function sectionOf(i){return i.group==='protein'?(i.subcategory||'Outras proteínas'):(GROUPS[i.group]||'Outros')}
+function optionList(group,selected,catalog=state.catalog){
+ const options=items=>items.slice().sort((a,b)=>a.name.localeCompare(b.name,'pt-BR')).map(i=>`<option value="${esc(i.id)}" ${i.id===selected?'selected':''}>${esc(i.name)}</option>`).join('');
+ if(group)return options(catalog.filter(i=>i.group===group));
+ const sections=[...new Set(catalog.map(sectionOf))].sort((a,b)=>{const x=CUT_CATEGORY_ORDER.indexOf(a),y=CUT_CATEGORY_ORDER.indexOf(b);return (x<0?999:x)-(y<0?999:y)||a.localeCompare(b,'pt-BR')});
+ return sections.map(name=>`<optgroup label="${esc(name)}">${options(catalog.filter(i=>sectionOf(i)===name))}</optgroup>`).join('');
+}
 function input(bind,value,opts={}){const type=opts.type||'number',step=opts.step||'0.01';return `<input aria-label="${esc(opts.label||bind)}" data-bind="${esc(bind)}" type="${esc(type)}" ${type==='number'?`step="${step}" min="0"`:''} value="${esc(value??'')}" ${opts.placeholder?`placeholder="${esc(opts.placeholder)}"`:''}>`}
 function select(bind,html){return `<select data-bind="${esc(bind)}">${html}</select>`}
 function btn(action,label,cls='secondary',attrs=''){return `<button type="button" class="btn ${cls}" data-action="${esc(action)}" ${attrs}>${label}</button>`}
@@ -142,7 +232,19 @@ function improveTips(c,draft=state.draft,catalog=state.catalog,targets=state.tar
  const requiredFoodMax=c.revenue*(1-TAX-.25);const allowedProteinPrice=pRaw>0?(requiredFoodMax-(c.food-pCost))/pRaw:null;
  return `<div class="stack">${top?`<div class="tip"><b>1 · Principal custo: ${esc(top.name)}</b>Responsável por ${money(top.cost)} no dia (${pct(top.cost/c.food*100)} dos alimentos). Cada R$ 1,00 a menos no kg cru economiza aproximadamente ${money(top.rawKg)} neste lote.</div>`:''}<div class="tip"><b>2 · Renegociar proteínas em 10%</b>Se o preço do kg cru das proteínas cair 10%, a economia estimada será de <b>${money(savedPrice)} no dia</b>, mantendo a mesma gramagem.</div><div class="tip"><b>3 · Simular menos 10 g de proteína na G</b>Compensando essa diferença com o carboidrato-base e ajustando proporcionalmente P e M, a economia seria de <b>${money(reducedProteinSaving)} no dia</b>. É uma simulação, não altera a receita salva.</div>${pRaw>0?`<div class="tip"><b>4 · Meta de margem de 25%</b>Considerando os outros custos constantes, o <b>preço médio máximo das proteínas</b> para alcançar essa margem seria ${money(allowedProteinPrice)}/kg cru. ${allowedProteinPrice<0?'Só diminuir o preço da proteína não seria suficiente.':''}</div>`:''}<p class="hint">Essas simulações consideram <b>apenas ingredientes e imposto de 12%</b>. Sua margem operacional real será menor quando despesas indiretas forem consideradas.</p></div>`}
 function resultView(data=state){const c=calculate(data.draft,data.catalog,data.targets);const sizesUsed=SIZES.filter(s=>c.orders.some(o=>o.size===s&&o.count>0));return `<div class="section">${metrics(c)}</div>${c.blocking.length?`<div class="alert error"><b>Não é possível calcular a margem ainda.</b><br>${c.blocking.map(esc).join('<br>')}</div>`:''}${c.warnings.length?`<div class="alert">${c.warnings.map(esc).join('<br>')}</div>`:''}<div class="section"><div class="section-heading"><div><h2>Montagem exata das marmitas</h2><p class="sub">Peso pronto por unidade, incluindo a parcela de cada ingrediente de pratos mistos.</p></div></div><div class="grid cols-3">${(sizesUsed.length?sizesUsed:['G']).map(s=>portionView(c.portions[s],c.orders.filter(o=>o.size===s).reduce((a,o)=>a+o.count,0))).join('')}</div></div><div class="section"><div class="grid cols-2"><div class="card pad"><div class="card-header"><div><h2>Resultado financeiro do dia</h2><p>Exclusivamente alimentos e 12% de tributos.</p></div></div><div class="cost-row"><span>Receita bruta</span><b>${money(c.revenue)}</b></div><div class="cost-row"><span>Imposto (12%)</span><b>− ${money(c.tax)}</b></div><div class="cost-row"><span>Custo de todos os alimentos</span><b>− ${money(c.food)}</b></div><div class="cost-row strong"><span>Resultado após impostos e alimentos</span><b>${money(c.profit)}</b></div><div class="cost-row strong"><span>Margem sobre faturamento</span><b>${pct(c.margin)}</b></div><p class="copy-note">Não inclui embalagem, transporte, gás, funcionários, aluguel ou outros custos.</p></div><div class="card pad"><div class="card-header"><div><h2>Ingredientes de maior custo</h2><p>Total de insumos crus para todas as marmitas do dia.</p></div></div>${c.ready?c.foods.slice(0,7).map(f=>`<div style="margin:11px 0"><div class="cost-row" style="border:0;padding:0"><span>${esc(f.name)} <span class="muted small">· ${fm(f.rawKg,2)} kg cru</span></span><b>${money(f.cost)}</b></div><div class="cost-bar"><span style="width:${c.food>0?f.cost/c.food*100:0}%"></span></div></div>`).join(''):'<p class="muted">Preencha todos os preços para ver esta análise.</p>'}</div></div></div><div class="section"><div class="section-heading"><div><h2>Margem por cliente e tamanho</h2><p class="sub">Ajuda a descobrir qual contrato ou tamanho gera mais resultado.</p></div></div><div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Cliente</th><th>Tamanho</th><th>Qtd.</th><th>Preço un.</th><th>Custo alimentos un.</th><th>Resultado un.</th><th>Margem</th></tr></thead><tbody>${c.orders.map(o=>`<tr><td>${esc(o.customer)}</td><td>${esc(o.size)}</td><td>${fm(o.count,0)}</td><td>${money(o.unitPrice)}</td><td>${money(c.portions[o.size]?.foodCost)}</td><td>${money(o.profit!==null?o.profit/o.count:null)}</td><td><b>${pct(o.revenue&&o.profit!==null?o.profit/o.revenue*100:null)}</b></td></tr>`).join('')}</tbody></table></div></div></div><div class="section"><div class="grid cols-2"><div class="card pad"><div class="card-header"><div><h2>Lista de compras do dia</h2><p>Pesos crus totais calculados a partir do rendimento informado.</p></div></div>${c.ready?`${c.foods.map(f=>`<div class="portion-row"><span>${esc(f.name)}</span><b>${fm(f.rawKg,3)} kg · ${money(f.cost)}</b></div>`).join('')}<div class="portion-row strong"><span>Total dos alimentos</span><b>${money(c.food)}</b></div>`:'<p class="muted">A lista será calculada quando os preços estiverem completos.</p>'}</div><div class="card pad"><div class="card-header"><div><h2>Como melhorar a margem</h2><p>Simulações para reduzir os custos sem perder o controle da montagem.</p></div></div>${improveTips(c,data.draft,data.catalog,data.targets)}</div></div></div><div class="buttonrow no-print">${!readOnly()?btn('save','✓ Salvar relatório','primary'):''}${btn('print','Imprimir / salvar PDF','secondary')}${btn('csv','Exportar CSV','secondary')}${btn('share','Compartilhar relatório','secondary')}</div>`}
-function ingredientView(){return `${weeklyReviewStatus()}<div class="section"><div class="section-heading"><div><h2>Cadastro de ingredientes e custos</h2><p class="sub">Atualize o preço pago por kg cru e o rendimento real de cada alimento. Preços em branco impedem margens fictícias.</p></div></div><div class="alert info">Um rendimento de <b>2,60</b> significa que 1 kg cru produz 2,60 kg prontos (ex.: arroz). Um rendimento de <b>0,75</b> significa que 1 kg cru rende 750 g prontos (ex.: frango). Os valores iniciais são <b>estimativas editáveis</b>. Para purês, molhos e receitas com leite, óleo ou outros ingredientes, cadastre-os separadamente na receita para custear corretamente.</div><div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Ingrediente</th><th>Grupo de montagem</th><th>Preço/kg cru (R$)</th><th>Rendimento</th><th>1 kg cru vira</th><th></th></tr></thead><tbody>${state.catalog.map((i,j)=>`<tr><td><b>${esc(i.name)}</b></td><td>${esc(GROUPS[i.group])}</td><td>${input(`catalog.${j}.price`,i.price,{placeholder:'Obrigatório'})}</td><td>${input(`catalog.${j}.yieldFactor`,i.yieldFactor,{step:'.01'})}</td><td>${fm(i.yieldFactor,2)} kg</td><td>${btn('remove-catalog','✕','ghost sm',`data-idx="${j}" aria-label="Excluir ingrediente"`)}</td></tr>`).join('')}</tbody></table></div></div></div><div class="card pad"><div class="card-header"><div><h2>Novo ingrediente</h2><p>Cadastre qualquer item usado na cozinha, inclusive componentes de preparações.</p></div></div><div class="form-grid"><div class="field" style="grid-column:span 2"><label>Nome</label><input id="new-name" type="text" placeholder="Ex.: molho de tomate"></div><div class="field"><label>Grupo de peso</label><select id="new-group">${Object.keys(GROUPS).map(g=>`<option value="${g}">${GROUPS[g]}</option>`).join('')}</select></div><div class="field"><label>Rendimento pronto/cru</label><input id="new-yield" type="number" min="0.01" step="0.01" value="1"></div></div><div style="margin-top:13px">${btn('add-catalog','+ Cadastrar ingrediente','primary')}</div></div>`}
+function catalogRows(){
+ const records=state.catalog.map((item,j)=>({item,j})).sort((a,b)=>{
+  const x=sectionOf(a.item),y=sectionOf(b.item),p=CUT_CATEGORY_ORDER.indexOf(x),q=CUT_CATEGORY_ORDER.indexOf(y);
+  return (p<0?999:p)-(q<0?999:q)||x.localeCompare(y,'pt-BR')||a.item.name.localeCompare(b.item.name,'pt-BR');
+ });
+ let previous='';
+ return records.map(({item:i,j})=>{const category=sectionOf(i);
+  const heading=category!==previous?`<tr class="cut-group-heading"><td colspan="6">${esc(category)}</td></tr>`:'';
+  previous=category;
+  return heading+`<tr><td><b>${esc(i.name)}</b></td><td>${esc(i.group==='protein'?category:GROUPS[i.group])}</td><td>${input(`catalog.${j}.price`,i.price,{placeholder:'Obrigatório'})}</td><td>${input(`catalog.${j}.yieldFactor`,i.yieldFactor,{step:'.01'})}</td><td>${fm(i.yieldFactor,2)} kg</td><td>${btn('remove-catalog','✕','ghost sm',`data-idx="${j}" aria-label="Excluir ingrediente"`)}</td></tr>`;
+ }).join('');
+}
+function ingredientView(){return `${weeklyReviewStatus()}<div class="section"><div class="section-heading"><div><h2>Cadastro de ingredientes e custos</h2><p class="sub">Atualize o preço pago por kg cru e o rendimento real de cada alimento. Preços em branco impedem margens fictícias.</p></div></div><div class="alert info">Um rendimento de <b>2,60</b> significa que 1 kg cru produz 2,60 kg prontos (ex.: arroz). Um rendimento de <b>0,75</b> significa que 1 kg cru rende 750 g prontos (ex.: frango). Os valores iniciais são <b>estimativas editáveis</b>. Para preparações com ingredientes adicionais, cadastre-os separadamente na receita. <b>Atenção aos cortes com osso:</b> o rendimento inicial é uma estimativa de peso pronto <b>incluindo o osso se ele for servido</b>. Se desossar antes de montar a marmita, informe o rendimento efetivo de carne pronta sem osso. Assim os 170 g de proteína representam a porção realmente pesada na marmita. Para ovos, o preço é por kg de ovo cru com casca.</div><div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Ingrediente</th><th>Categoria / corte</th><th>Preço/kg cru (R$)</th><th>Rendimento</th><th>1 kg cru vira</th><th></th></tr></thead><tbody>${catalogRows()}</tbody></table></div></div></div><div class="card pad"><div class="card-header"><div><h2>Novo ingrediente</h2><p>Cadastre qualquer item usado na cozinha, inclusive componentes de preparações.</p></div></div><div class="form-grid"><div class="field" style="grid-column:span 2"><label>Nome</label><input id="new-name" type="text" placeholder="Ex.: molho de tomate"></div><div class="field"><label>Grupo de peso</label><select id="new-group">${Object.keys(GROUPS).map(g=>`<option value="${g}">${GROUPS[g]}</option>`).join('')}</select></div><div class="field"><label>Rendimento pronto/cru</label><input id="new-yield" type="number" min="0.01" step="0.01" value="1"></div><div class="field"><label>Categoria (se for proteína)</label><select id="new-subgroup">${PROTEIN_CATEGORIES.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("")}</select></div></div><div style="margin-top:13px">${btn('add-catalog','+ Cadastrar ingrediente','primary')}</div></div>`}
 function historyView(){const reports=sharedReport?[sharedReport]:state.reports.slice().sort((a,b)=>b.report_date.localeCompare(a.report_date));const r=getReport();return `<div class="grid cols-2"><div class="card pad"><div class="card-header"><div><h2>Relatórios salvos</h2><p>${reports.length} registro(s) disponíveis</p></div></div>${reports.length?`<div class="report-list">${reports.map(x=>{const s=calculate(x.payload.draft,x.payload.catalog,x.payload.targets);return `<button class="report-item ${r?.report_date===x.report_date?'active':''}" data-action="select-report" data-date="${esc(x.report_date)}"><span><span class="date-label">${datebr(x.report_date)}</span><br><span class="name">${esc(x.payload.draft.menu)}</span><br><span class="details">${fm(s.qty,0)} marmitas · ${money(s.revenue)}</span></span><span class="margin ${s.margin>=0?'good':'bad'}">${pct(s.margin)}</span></button>`}).join('')}</div>`:'<div class="empty"><h3>Nenhum relatório salvo</h3><p>Depois de preencher os preços, salve seu primeiro dia.</p></div>'}</div><div class="card pad">${r?`<div class="date-label">${datebr(r.report_date)}</div><h2 class="report-h">${esc(r.payload.draft.menu)}</h2><p class="muted">${fm(calculate(r.payload.draft,r.payload.catalog,r.payload.targets).qty,0)} marmitas no dia</p><div class="divider"></div>${(()=>{const v=calculate(r.payload.draft,r.payload.catalog,r.payload.targets);return `<div class="cost-row"><span>Receita</span><b>${money(v.revenue)}</b></div><div class="cost-row"><span>Impostos (12%)</span><b>${money(v.tax)}</b></div><div class="cost-row"><span>Alimentos</span><b>${money(v.food)}</b></div><div class="cost-row strong"><span>Resultado</span><b>${money(v.profit)}</b></div><div class="cost-row strong"><span>Margem</span><b>${pct(v.margin)}</b></div>`})()}<div class="buttonrow" style="margin-top:16px">${btn('open-selected','Abrir relatório','primary')}${!readOnly()?btn('edit-selected','Reabrir na gestão','secondary'):''}${btn('share','Compartilhar','secondary')}</div>`:'<div class="empty"><h3>Selecione um dia</h3><p>Os indicadores e a ficha técnica aparecerão aqui.</p></div>'}</div></div>`}
 function viewer(){const r=getReport();if(!r)return `<div class="empty"><h3>Sem relatórios para consultar</h3><p>O gestor precisa salvar um relatório para que ele apareça nesta tela.</p></div>`;return `<div class="section"><div class="section-heading"><div><div class="date-label">${datebr(r.report_date)}</div><h2 class="report-h">${esc(r.payload.draft.menu)}</h2><p class="sub">Visão de consulta · sem permissão para alterar dados.</p></div></div></div>${resultView(r.payload)}`}
 // Lembrete semanal visível no painel de gestão (salvo neste navegador).
@@ -166,7 +268,7 @@ function renderLogin(){document.getElementById('app').innerHTML=`${head()}<div c
 function render(){if(isCloud()&&!session&&!sharedReport){renderLogin();return}if(isCloud()&&session&&cloudLoading){document.getElementById('app').innerHTML=`${head()}<div class="boot"><div class="spinner"></div><p>Carregando relatórios...</p></div>`;return}let content='';if(readOnly()){content=tab==='historico'?historyView():viewer()}else{if(tab==='planejamento')content=planning();else if(tab==='resultado')content=resultView();else if(tab==='historico')content=historyView();else if(tab==='ingredientes')content=ingredientView();else if(tab==='configuracao')content=settingsView()}
  document.getElementById('app').innerHTML=`<div class="shell">${head()}<main class="container">${hero()}${nav()}${weeklyReminder()}${syncError?`<div class="alert error">${esc(syncError)}</div>`:''}${content}${footer()}</main></div>`}
 function updateBind(path,value){const p=path.split('.');const parse=x=>n(x);const d=state.draft;
- if(p[0]==='draft'){if(p[1]==='date'){const existing=reportOfDate(value);d.date=value;if(existing){state.draft=structuredClone(existing.payload.draft);state.catalog=structuredClone(existing.payload.catalog);state.targets=structuredClone(existing.payload.targets);toast('Relatório existente deste dia carregado.')}else d.date=value;}else if(p[1]==='people')d.people=parse(value);else d[p[1]]=value}
+ if(p[0]==='draft'){if(p[1]==='date'){const existing=reportOfDate(value);d.date=value;if(existing){state.draft=structuredClone(existing.payload.draft);state.catalog=mergeBaseCuts(structuredClone(existing.payload.catalog));state.targets=structuredClone(existing.payload.targets);toast('Relatório existente deste dia carregado.')}else d.date=value;}else if(p[1]==='people')d.people=parse(value);else d[p[1]]=value}
  else if(p[0]==='orders'){const r=d.orders[Number(p[1])];if(r){r[p[2]]=['qty','price'].includes(p[2])?parse(value):value}}
  else if(p[0]==='base')d.base[p[1]]=value;
  else if(p[0]==='recipe'){const r=d.recipe[Number(p[1])];if(r)r[p[2]]=p[2]==='rawKg'?parse(value):value}
@@ -199,10 +301,10 @@ async function onAction(action,el){const idx=Number(el.dataset.idx),date=el.data
  if(action==='remove-recipe'){if(state.draft.recipe.length<=1){toast('Mantenha pelo menos um ingrediente na receita.','error');return}state.draft.recipe.splice(idx,1)}
  if(action==='sample-chicken'){state.draft.menu='Frango com arroz, feijão e legumes';state.draft.recipe=[{id:newId(),ingredientId:'frango',rawKg:1}];toast('Modelo de frango carregado. Confira os preços e o rendimento.')}
  if(action==='sample-mixed'){state.draft.menu='Carne moída com batata, arroz, feijão e legumes';state.draft.recipe=[{id:newId(),ingredientId:'carne_moida',rawKg:1},{id:newId(),ingredientId:'batata',rawKg:.6}];toast('Modelo de carne moída com batata carregado. Ajuste as quantidades cruas da receita.')}
- if(action==='add-catalog'){const name=document.getElementById('new-name')?.value.trim(),group=document.getElementById('new-group')?.value,y=n(document.getElementById('new-yield')?.value);if(!name||!GROUPS[group]||!(y>0)){toast('Informe nome, grupo e rendimento válido.','error');return}state.catalog.push({id:newId(),name,group,yieldFactor:y,price:null});toast('Ingrediente cadastrado.')}
+ if(action==='add-catalog'){const name=document.getElementById('new-name')?.value.trim(),group=document.getElementById('new-group')?.value,y=n(document.getElementById('new-yield')?.value);if(!name||!GROUPS[group]||!(y>0)){toast('Informe nome, grupo e rendimento válido.','error');return}state.catalog.push({id:newId(),name,group,yieldFactor:y,price:null,subcategory:group==='protein'?document.getElementById('new-subgroup').value:GROUPS[group]});toast('Ingrediente cadastrado.')}
  if(action==='remove-catalog'){const it=state.catalog[idx];if(!it)return;const used=state.draft.recipe.some(r=>r.ingredientId===it.id)||Object.values(state.draft.base).includes(it.id);if(used){toast('Esse ingrediente está sendo usado no cardápio atual. Substitua-o antes de excluir.','error');return}if(!confirm(`Excluir ${it.name}?`))return;state.catalog.splice(idx,1)}
  if(action==='select-report'){selectedDate=date;state.selectedDate=date;persist()}
- if(action==='open-selected'){tab=readOnly()?'consulta':'resultado';if(!readOnly()&&getReport()){const r=getReport();state.draft=structuredClone(r.payload.draft);state.catalog=structuredClone(r.payload.catalog);state.targets=structuredClone(r.payload.targets)}}
+ if(action==='open-selected'){tab=readOnly()?'consulta':'resultado';if(!readOnly()&&getReport()){const r=getReport();state.draft=structuredClone(r.payload.draft);state.catalog=mergeBaseCuts(structuredClone(r.payload.catalog));state.targets=structuredClone(r.payload.targets)}}
  if(action==='edit-selected'){const r=getReport();if(!r)return;state.draft=structuredClone(r.payload.draft);state.catalog=structuredClone(r.payload.catalog);state.targets=structuredClone(r.payload.targets);tab='planejamento';toast('Relatório carregado para edição. Salve para atualizar.')}
  if(action==='print'){window.print();return}
  if(action==='csv'){exportCsv();return}
@@ -213,7 +315,7 @@ async function onAction(action,el){const idx=Number(el.dataset.idx),date=el.data
  if(action==='remove-cloud'){if(!confirm('Sair da nuvem e usar apenas os dados deste navegador?'))return;cloudCfg={url:'',anonKey:''};localStorage.setItem(CLOUD_STORAGE,JSON.stringify(cloudCfg));session=null;client=null;role='viewer';syncError='';toast('Modo local ativado.')}
  if(action==='logout'){await client?.auth.signOut();session=null;role='viewer';tab='consulta';renderLogin();return}
  persist();render()}
-document.addEventListener('change',async e=>{const x=e.target;if(x.dataset.bind){if(readOnly())return;updateBind(x.dataset.bind,x.value)}if(x.id==='import-file'){if(isCloud()){toast('Faça backup/restauração pelo banco de dados na nuvem.','error');return}const f=x.files?.[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!Array.isArray(data.catalog)||!data.targets||!data.draft||!Array.isArray(data.reports))throw new Error('Formato inválido');if(!confirm('Restaurar este backup? Os dados locais atuais serão substituídos.'))return;state=data;persist();render();toast('Backup restaurado.')}catch(err){toast(`Backup inválido: ${err.message}`,'error')}}});
+document.addEventListener('change',async e=>{const x=e.target;if(x.dataset.bind){if(readOnly())return;updateBind(x.dataset.bind,x.value)}if(x.id==='import-file'){if(isCloud()){toast('Faça backup/restauração pelo banco de dados na nuvem.','error');return}const f=x.files?.[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!Array.isArray(data.catalog)||!data.targets||!data.draft||!Array.isArray(data.reports))throw new Error('Formato inválido');if(!confirm('Restaurar este backup? Os dados locais atuais serão substituídos.'))return;state=data;state.catalog=mergeBaseCuts(state.catalog);state.catalogSchema=CATALOG_SCHEMA;persist();render();toast('Backup restaurado.')}catch(err){toast(`Backup inválido: ${err.message}`,'error')}}});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(b){e.preventDefault();onAction(b.dataset.action,b).catch(err=>toast(err.message,'error'))}});
 document.addEventListener('submit',e=>{if(e.target.id==='login-form')loginSubmit(e)});
 if(sharedReport){selectedDate=sharedReport.report_date;tab='consulta';render()}else if(isCloud())startCloud();else render();
