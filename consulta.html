@@ -160,7 +160,7 @@ let cloudCfg=(()=>{const official=window.BATAN_CLOUD||{};if(official.url&&offici
 const isCloud=()=>Boolean(cloudCfg.url?.trim()&&cloudCfg.anonKey?.trim());
 const params=new URLSearchParams(location.search);
 const forceViewer=document.documentElement.dataset.mode==='consulta'||params.get('modo')==='consulta'||params.has('visao');
-if(params.get('aba')==='ingredientes'&&!forceViewer)tab='ingredientes';
+if(params.get('aba')==='gabarito')tab='gabarito';else if(params.get('aba')==='ingredientes'&&!forceViewer)tab='ingredientes';
 let sharedReport=null;
 try{const v=params.get('visao');if(v&&!isCloud()){const bytes=Uint8Array.from(atob(v.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));sharedReport=JSON.parse(new TextDecoder().decode(bytes));if(!sharedReport?.payload?.draft)sharedReport=null}}catch(e){sharedReport=null}
 let readOnly=()=>forceViewer||Boolean(isCloud()&&role!=='manager');
@@ -456,7 +456,7 @@ async function afterLogin(){
  role=data.role;
  if(role==='manager')await loadCloudState();
  await fetchReports();
- cloudLoading=false;tab=readOnly()?'consulta':(params.get('aba')==='ingredientes'?'ingredientes':'planejamento');render();if(tab==='ingredientes'&&params.get('aba')==='ingredientes')document.getElementById('precos')?.scrollIntoView({block:'start'});
+ cloudLoading=false;tab=params.get('aba')==='gabarito'?'gabarito':(readOnly()?'consulta':(params.get('aba')==='ingredientes'?'ingredientes':'planejamento'));render();if(tab==='ingredientes'&&params.get('aba')==='ingredientes')document.getElementById('precos')?.scrollIntoView({block:'start'});
  try{
   client.removeAllChannels();
   let channel=client.channel('batan-relatorios').on('postgres_changes',{event:'*',schema:'public',table:'day_reports'},()=>fetchReports());
